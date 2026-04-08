@@ -1,0 +1,81 @@
+<Window x:Class="SqlServerTool.Views.BackupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:h="clr-namespace:SqlServerTool.Helpers"
+        Title="バックアップ" Height="260" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <h:InvertBoolConverter x:Key="InvertBoolConverter"/>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 出力フォルダ -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="出力フォルダ"
+                   VerticalAlignment="Center" Margin="0,6"/>
+        <TextBox   Grid.Row="0" Grid.Column="1"
+                   Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}"
+                   IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                   VerticalAlignment="Center" Margin="0,6,4,6"/>
+        <Button    Grid.Row="0" Grid.Column="2" Content="参照..."
+                   Command="{Binding BrowseFolderCommand}"
+                   IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                   Width="60"/>
+
+        <!-- ファイル名 -->
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="ファイル名"
+                   VerticalAlignment="Center" Margin="0,6"/>
+        <TextBox   Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                   Text="{Binding FileName, UpdateSourceTrigger=PropertyChanged}"
+                   IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                   Margin="0,6"/>
+
+        <!-- フルパス表示 -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="出力先"
+                   VerticalAlignment="Center" Margin="0,6" Foreground="Gray"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                   Text="{Binding FullPath}"
+                   VerticalAlignment="Center" Margin="0,6"
+                   Foreground="DarkBlue" TextWrapping="NoWrap"
+                   TextTrimming="CharacterEllipsis"
+                   ToolTip="{Binding FullPath}"/>
+
+        <!-- 上書き確認チェック -->
+        <CheckBox  Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                   Content="同じファイルが存在する場合は上書き前に確認する"
+                   IsChecked="{Binding ConfirmOverwrite}"
+                   IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                   Margin="0,10"/>
+
+        <!-- ステータス -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                   Text="{Binding StatusMessage}"
+                   Foreground="DarkBlue" VerticalAlignment="Bottom"/>
+
+        <!-- ボタン -->
+        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3"
+                    Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="実行"
+                    Command="{Binding ExecuteCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBoolConverter}}"
+                    Width="80" Margin="0,0,8,0"/>
+            <Button Content="キャンセル"
+                    Command="{Binding CancelCommand}"
+                    Width="80"/>
+        </StackPanel>
+    </Grid>
+</Window>

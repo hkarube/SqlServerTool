@@ -1,0 +1,73 @@
+<Window x:Class="SqlServerTool.Views.ConnectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DB接続設定" Height="320" Width="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="110"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="サーバー名" VerticalAlignment="Center" Margin="0,6"/>
+        <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding ServerName, UpdateSourceTrigger=PropertyChanged}" Margin="0,6"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="データベース名" VerticalAlignment="Center" Margin="0,6"/>
+        <TextBox   Grid.Row="1" Grid.Column="1" Text="{Binding DatabaseName, UpdateSourceTrigger=PropertyChanged}" Margin="0,6"/>
+
+        <!-- 認証方法 -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="認証" VerticalAlignment="Center" Margin="0,6"/>
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,6">
+            <RadioButton x:Name="SqlAuthRadio"
+                         Content="SQL Server 認証"
+                         IsChecked="{Binding IsNotWindowsAuth, Mode=OneWay}"
+                         Margin="0,0,12,0" VerticalAlignment="Center"
+                         Checked="SqlAuthRadio_Checked"/>
+            <RadioButton x:Name="WinAuthRadio"
+                         Content="Windows 認証"
+                         IsChecked="{Binding UseWindowsAuth, Mode=OneWay}"
+                         VerticalAlignment="Center"
+                         Checked="WinAuthRadio_Checked"/>
+        </StackPanel>
+
+        <!-- SQL Server 認証のみ表示 -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="ユーザーID" VerticalAlignment="Center" Margin="0,6"
+                   Visibility="{Binding IsNotWindowsAuth, Converter={StaticResource BoolToVis}}"/>
+        <TextBox   Grid.Row="3" Grid.Column="1" Text="{Binding UserId, UpdateSourceTrigger=PropertyChanged}" Margin="0,6"
+                   Visibility="{Binding IsNotWindowsAuth, Converter={StaticResource BoolToVis}}"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="パスワード" VerticalAlignment="Center" Margin="0,6"
+                   Visibility="{Binding IsNotWindowsAuth, Converter={StaticResource BoolToVis}}"/>
+        <PasswordBox Grid.Row="4" Grid.Column="1"
+                     x:Name="PasswordBox" Margin="0,6"
+                     PasswordChanged="PasswordBox_PasswordChanged"
+                     Visibility="{Binding IsNotWindowsAuth, Converter={StaticResource BoolToVis}}"/>
+
+        <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                   Text="{Binding StatusMessage}" Margin="0,8"
+                   Foreground="DarkBlue" TextWrapping="Wrap"/>
+
+        <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+                    Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="接続テスト" Command="{Binding TestConnectionCommand}"
+                    Width="90" Margin="0,0,8,0"/>
+            <Button Content="接続" Command="{Binding ConnectCommand}"
+                    Width="70" Margin="0,0,8,0"/>
+            <Button Content="キャンセル" Width="80"
+                    Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

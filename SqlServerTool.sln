@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37027.9 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServerTool", "SqlServerTool.csproj", "{DC22C5FE-D776-4986-85BE-71D1EF29ABC2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC22C5FE-D776-4986-85BE-71D1EF29ABC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC22C5FE-D776-4986-85BE-71D1EF29ABC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC22C5FE-D776-4986-85BE-71D1EF29ABC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC22C5FE-D776-4986-85BE-71D1EF29ABC2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {10F7CAA8-51ED-4B5B-8F66-C412632E82B2}
+	EndGlobalSection
+EndGlobal

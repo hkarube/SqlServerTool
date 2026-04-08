@@ -1,0 +1,224 @@
+<Window x:Class="SqlServerTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:SqlServerTool.ViewModels"
+        xmlns:v="clr-namespace:SqlServerTool.Views"
+        xmlns:h="clr-namespace:SqlServerTool.Helpers"
+        Title="SQL Server Tool" Height="660" Width="1100"
+        Icon="DatabaseProject_7342.ico"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <h:InvertBoolConverter x:Key="InvertBoolConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- ナビゲーションボタン共通スタイル -->
+        <Style x:Key="NavButton" TargetType="RadioButton">
+            <Setter Property="Height"  Value="36"/>
+            <Setter Property="Margin"  Value="4,2"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="#F0F0F0" BorderBrush="#CCCCCC"
+                                BorderThickness="1" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2B579A"/>
+                                <Setter Property="Foreground"                  Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#D0E4FF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 左ペインの汎用ボタン -->
+        <Style x:Key="LeftButton" TargetType="Button">
+            <Setter Property="Height"  Value="36"/>
+            <Setter Property="Margin"  Value="4,2"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <!-- DataTemplate: ObjectListTab -->
+        <DataTemplate DataType="{x:Type vm:ObjectListTab}">
+            <DockPanel>
+                <!-- 一覧上部ツールバー -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="4,4,4,2">
+                    <Button Content="削除"
+                            Foreground="DarkRed"
+                            Width="60" Height="24" Margin="0,0,4,0"
+                            Command="{Binding DataContext.DeleteObjectCommand,
+                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding ElementName=ObjectGrid, Path=SelectedItems}"/>
+                    <Button Content="名前変更"
+                            Width="80" Height="24"
+                            Command="{Binding DataContext.RenameObjectCommand,
+                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding ElementName=ObjectGrid, Path=SelectedItems}"/>
+                </StackPanel>
+
+            <DataGrid x:Name="ObjectGrid" DockPanel.Dock="Top"
+                      ItemsSource="{Binding Objects}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      SelectionMode="Extended"
+                      GridLinesVisibility="Horizontal"
+                      AlternatingRowBackground="#F5F8FF"
+                      MouseDoubleClick="ObjectGrid_MouseDoubleClick"
+                      Margin="4">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOpen}" Value="True">
+                                <Setter Property="Background" Value="#FFCCCC"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="テーブル定義書を出力（Excel）"
+                                  Click="ExportDefinition_Click"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="名前"   Binding="{Binding Name}"          Width="200"/>
+                    <DataGridTextColumn Header="件数"   Binding="{Binding RowCountText}"   Width="80">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                <Setter Property="Padding"             Value="0,0,4,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="所有者" Binding="{Binding Owner}"          Width="100"/>
+                    <DataGridTextColumn Header="タイプ" Binding="{Binding ObjectType}"     Width="80"/>
+                    <DataGridTextColumn Header="作成日" Binding="{Binding CreateDateText}" Width="130"/>
+                    <DataGridTextColumn Header="コメント" Binding="{Binding Comment}"      Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- DataTemplate: QueryTab -->
+        <DataTemplate DataType="{x:Type vm:QueryTab}">
+            <v:QueryTabView/>
+        </DataTemplate>
+
+        <!-- DataTemplate: AddTabSentinel (空) -->
+        <DataTemplate DataType="{x:Type vm:AddTabSentinel}">
+            <Grid/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+
+        <!-- ─── メニューバー ───────────────────────────────────────────── -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="ファイル(_F)">
+                <MenuItem Header="接続(_C)..." Command="{Binding OpenConnectionCommand}"/>
+                <Separator/>
+                <MenuItem Header="終了(_X)" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="表示(_V)">
+                <MenuItem Header="一覧を更新(_R)" Command="{Binding RefreshListCommand}"/>
+            </MenuItem>
+            <MenuItem Header="ツール(_T)">
+                <MenuItem Header="バックアップ(_B)..." Command="{Binding BackupCommand}"/>
+                <MenuItem Header="リストア(_R)..."     Command="{Binding RestoreCommand}"/>
+                <Separator/>
+                <MenuItem Header="スクリプト出力(_S)..." Command="{Binding OpenScriptDialogCommand}"/>
+                <Separator/>
+                <MenuItem Header="SQL 実行履歴(_H)..." Command="{Binding OpenSqlHistoryCommand}"/>
+                <Separator/>
+                <MenuItem Header="設定(_O)..." Command="{Binding OpenSettingsCommand}"/>
+            </MenuItem>
+            <MenuItem Header="ヘルプ(_H)">
+                <MenuItem Header="バージョン情報(_A)..." Click="About_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- ─── ツールバー ─────────────────────────────────────────────── -->
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="接続" Command="{Binding OpenConnectionCommand}" Padding="8,2"/>
+            <Separator/>
+            <Button Content="一覧更新" Command="{Binding RefreshListCommand}" Padding="8,2"/>
+            <Separator/>
+            <TextBlock Text="{Binding ConnectionStatus}"
+                       VerticalAlignment="Center" Margin="8,0"
+                       Foreground="DarkBlue" FontWeight="SemiBold"/>
+        </ToolBar>
+
+        <!-- ─── メインレイアウト ──────────────────────────────────────── -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140" MinWidth="110"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ─── 左ペイン：ナビゲーション ─────────────────────────── -->
+            <DockPanel Grid.Column="0" LastChildFill="False" Margin="4">
+
+                <TextBlock DockPanel.Dock="Top" Text="オブジェクト"
+                           FontSize="11" Foreground="Gray" Margin="4,6,4,2"/>
+
+                <RadioButton DockPanel.Dock="Top" Style="{StaticResource NavButton}"
+                             Content="テーブル" GroupName="Nav" IsChecked="True"
+                             Command="{Binding SelectCategoryCommand}"
+                             CommandParameter="Tables"/>
+                <RadioButton DockPanel.Dock="Top" Style="{StaticResource NavButton}"
+                             Content="ビュー" GroupName="Nav"
+                             Command="{Binding SelectCategoryCommand}"
+                             CommandParameter="Views"/>
+                <RadioButton DockPanel.Dock="Top" Style="{StaticResource NavButton}"
+                             Content="ストアドプロシージャ" GroupName="Nav"
+                             Command="{Binding SelectCategoryCommand}"
+                             CommandParameter="StoredProcs"/>
+                <RadioButton DockPanel.Dock="Top" Style="{StaticResource NavButton}"
+                             Content="ファンクション" GroupName="Nav"
+                             Command="{Binding SelectCategoryCommand}"
+                             CommandParameter="Functions"/>
+
+            </DockPanel>
+
+            <!-- スプリッター -->
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"/>
+
+            <!-- ─── 右ペイン：TabControl ──────────────────────────────── -->
+            <TabControl Grid.Column="2"
+                        ItemsSource="{Binding Tabs}"
+                        SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                        Margin="2">
+                <TabControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Header}" VerticalAlignment="Center"/>
+                            <Button Content="×"
+                                    Visibility="{Binding IsClosable, Converter={StaticResource BoolToVis}}"
+                                    Command="{Binding DataContext.CloseTabCommand,
+                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"
+                                    Width="16" Height="16"
+                                    Margin="6,0,0,0" Padding="0"
+                                    FontSize="10" VerticalAlignment="Center"
+                                    BorderThickness="0" Background="Transparent"
+                                    Cursor="Hand"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+            </TabControl>
+
+        </Grid>
+    </DockPanel>
+</Window>

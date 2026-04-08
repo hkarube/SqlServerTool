@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.v11.suo
+*.v12.suo
+UpgradeLog.htm
+
+# Build output
+bin/
+obj/
+
+# NuGet
+packages/
+*.nupkg
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Python/スクリプト（任意でコメントアウト解除）
+# *.py
+# *.csx

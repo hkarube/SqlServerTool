@@ -1,0 +1,276 @@
+<Window x:Class="SqlServerTool.Views.TableDetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:SqlServerTool.ViewModels"
+        xmlns:h="clr-namespace:SqlServerTool.Helpers"
+        xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="{Binding TableName, StringFormat='詳細: {0}'}"
+        Height="540" Width="820"
+        WindowStartupLocation="CenterOwner"
+        Closing="Window_Closing">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <h:InvertBoolConverter x:Key="InvertBool"/>
+
+        <!-- SQL Server データ型一覧（編集可能ComboBox用） -->
+        <x:Array x:Key="SqlDataTypes" Type="sys:String">
+            <sys:String>int</sys:String>
+            <sys:String>bigint</sys:String>
+            <sys:String>smallint</sys:String>
+            <sys:String>tinyint</sys:String>
+            <sys:String>bit</sys:String>
+            <sys:String>decimal(18,2)</sys:String>
+            <sys:String>numeric(18,4)</sys:String>
+            <sys:String>float</sys:String>
+            <sys:String>real</sys:String>
+            <sys:String>money</sys:String>
+            <sys:String>datetime</sys:String>
+            <sys:String>datetime2(7)</sys:String>
+            <sys:String>date</sys:String>
+            <sys:String>time(7)</sys:String>
+            <sys:String>char(10)</sys:String>
+            <sys:String>nchar(10)</sys:String>
+            <sys:String>varchar(50)</sys:String>
+            <sys:String>varchar(100)</sys:String>
+            <sys:String>varchar(200)</sys:String>
+            <sys:String>varchar(MAX)</sys:String>
+            <sys:String>nvarchar(50)</sys:String>
+            <sys:String>nvarchar(100)</sys:String>
+            <sys:String>nvarchar(200)</sys:String>
+            <sys:String>nvarchar(MAX)</sys:String>
+            <sys:String>uniqueidentifier</sys:String>
+            <sys:String>varbinary(MAX)</sys:String>
+        </x:Array>
+    </Window.Resources>
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="DarkBlue"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- ─── SQL 実行ログパネル（下部） ─── -->
+        <GridSplitter DockPanel.Dock="Bottom" Height="5" HorizontalAlignment="Stretch"
+                      Background="#CCCCCC"/>
+        <Grid DockPanel.Dock="Bottom" Height="110" MinHeight="50">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" Margin="0,2,0,1">
+                <TextBlock Text="■ 実行SQLログ（このセッション）"
+                           FontSize="11" FontWeight="Bold" Foreground="DarkBlue"
+                           VerticalAlignment="Center" Margin="6,0,0,0"/>
+                <Button Content="全履歴を開く" HorizontalAlignment="Right"
+                        FontSize="10" Padding="6,1" Margin="0,0,4,0"
+                        Click="OpenHistoryButton_Click"/>
+            </Grid>
+            <ListBox Grid.Row="1" x:Name="SqlLogList"
+                     ItemsSource="{Binding SessionLog}"
+                     FontFamily="Consolas" FontSize="11"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     MouseDoubleClick="SqlLogList_MouseDoubleClick">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="SQLをコピー" Click="SqlLogCopy_Click"/>
+                        <MenuItem Header="全文を表示" Click="SqlLogView_Click"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Display}" TextWrapping="NoWrap"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <TabControl Margin="4" x:Name="MainTab">
+
+            <!-- ─── 構造タブ（TABLE / VIEW のみ） ─── -->
+            <TabItem Header="構造"
+                     Visibility="{Binding IsTableOrView,
+                         Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 通常モード ツールバー -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,4,4,2"
+                                Visibility="{Binding IsNotEditingStructure, Converter={StaticResource BoolToVisibility}}">
+                        <Button Content="構造を編集" Command="{Binding StartEditStructureCommand}"
+                                Width="90" Height="24"/>
+                    </StackPanel>
+
+                    <!-- 編集モード ツールバー -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,4,4,2"
+                                Visibility="{Binding IsEditingStructure, Converter={StaticResource BoolToVisibility}}">
+                        <Button Content="列を追加" Click="AddColumnButton_Click"
+                                Width="80" Height="24" Margin="0,0,4,0"/>
+                        <Button Content="選択列を削除" Click="RemoveColumnButton_Click"
+                                Width="95" Height="24" Margin="0,0,8,0" Foreground="DarkRed"/>
+                        <Button Content="保存" Command="{Binding SaveStructureCommand}"
+                                Width="60" Height="24" Margin="0,0,4,0" Foreground="DarkGreen"/>
+                        <Button Content="キャンセル" Command="{Binding CancelEditStructureCommand}"
+                                Width="80" Height="24"/>
+                    </StackPanel>
+
+                    <!-- 通常表示グリッド -->
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Columns}"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False"
+                              GridLinesVisibility="Horizontal"
+                              AlternatingRowBackground="#F5F8FF" Margin="4"
+                              Visibility="{Binding IsNotEditingStructure, Converter={StaticResource BoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="列名"       Binding="{Binding ColumnName}"     Width="150"/>
+                            <DataGridTextColumn Header="論理名"     Binding="{Binding LogicalName}"    Width="150"/>
+                            <DataGridTextColumn Header="データ型"   Binding="{Binding DataType}"       Width="120"/>
+                            <DataGridTextColumn Header="NULL"       Binding="{Binding NullableText}"   Width="50"/>
+                            <DataGridTextColumn Header="PK"         Binding="{Binding PrimaryKeyText}" Width="40"/>
+                            <DataGridTextColumn Header="FK"         Binding="{Binding ForeignKeyText}" Width="40"/>
+                            <DataGridTextColumn Header="デフォルト" Binding="{Binding DefaultValue}"   Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- 編集グリッド -->
+                    <DataGrid Grid.Row="1" x:Name="EditColumnsGrid"
+                              ItemsSource="{Binding EditableColumns}"
+                              AutoGenerateColumns="False" IsReadOnly="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal"
+                              AlternatingRowBackground="#FFF8F0" Margin="4"
+                              Visibility="{Binding IsEditingStructure, Converter={StaticResource BoolToVisibility}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn     Header="列名"       Binding="{Binding ColumnName,   UpdateSourceTrigger=PropertyChanged}" Width="150"/>
+                            <DataGridTemplateColumn Header="データ型" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DataType}" Margin="4,0" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox IsEditable="True"
+                                                  Text="{Binding DataType, UpdateSourceTrigger=PropertyChanged}"
+                                                  ItemsSource="{StaticResource SqlDataTypes}"
+                                                  IsTextSearchEnabled="True"
+                                                  Margin="0" Padding="2,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridCheckBoxColumn Header="NULL可"     Binding="{Binding IsNullable,   UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                            <DataGridCheckBoxColumn Header="PK"         Binding="{Binding IsPrimaryKey, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                            <DataGridTextColumn     Header="デフォルト" Binding="{Binding DefaultValue, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                            <DataGridTemplateColumn Header="削除" Width="50">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="×" Foreground="DarkRed" BorderThickness="0" Background="Transparent"
+                                                Command="{Binding DataContext.RemoveColumnCommand,
+                                                    RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- ─── データタブ（TABLE / VIEW のみ） ─── -->
+            <TabItem Header="データ"
+                     Visibility="{Binding IsTableOrView,
+                         Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="80" MinHeight="40"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- ツールバー -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,6">
+                        <Button Content="▶ 実行" Command="{Binding SearchDataCommand}"
+                                Width="70" Height="26" Margin="0,0,8,0"/>
+                        <Button Content="ヘッダ付コピー" Command="{Binding CopyWithHeaderCommand}"
+                                Width="100" Height="26" Margin="0,0,8,0"/>
+                        <Button Content="新規作成" Click="NewRowButton_Click"
+                                Width="80" Height="26" Margin="0,0,4,0" Foreground="DarkGreen"/>
+                        <Button Content="行編集" Click="EditRowButton_Click"
+                                Width="70" Height="26" Margin="0,0,4,0"/>
+                        <Button Content="削除" Click="DeleteRowButton_Click"
+                                Width="60" Height="26" Margin="0,0,12,0"
+                                Foreground="DarkRed"/>
+                        <TextBlock Text="{Binding RowCountText}"
+                                   VerticalAlignment="Center" Foreground="Gray"/>
+                    </StackPanel>
+
+                    <!-- SQL エディタ -->
+                    <avalonEdit:TextEditor
+                        Grid.Row="1"
+                        x:Name="DataSqlEditor"
+                        SyntaxHighlighting="TSQL"
+                        FontFamily="Consolas" FontSize="13"
+                        ShowLineNumbers="True"
+                        Margin="4,0,4,0"/>
+
+                    <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch"
+                                  Background="#CCCCCC"/>
+
+                    <!-- 結果グリッド（複数行選択可） -->
+                    <DataGrid Grid.Row="3"
+                              x:Name="ResultGrid"
+                              ItemsSource="{Binding DataRows}"
+                              AutoGenerateColumns="True" IsReadOnly="True"
+                              CanUserAddRows="False"
+                              SelectionMode="Extended"
+                              SelectionUnit="FullRow"
+                              GridLinesVisibility="Horizontal"
+                              AlternatingRowBackground="#F5F8FF" Margin="4"/>
+                </Grid>
+            </TabItem>
+
+            <!-- ─── SQL 定義タブ（PROCEDURE / FUNCTION） ─── -->
+            <TabItem Header="SQL定義"
+                     Visibility="{Binding IsCodeObject,
+                         Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 通常モード ツールバー -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,4,4,2"
+                                Visibility="{Binding IsNotEditingCode, Converter={StaticResource BoolToVisibility}}">
+                        <Button Content="編集" Command="{Binding StartEditCodeCommand}"
+                                Width="60" Height="24"/>
+                    </StackPanel>
+
+                    <!-- 編集モード ツールバー -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,4,4,2"
+                                Visibility="{Binding IsEditingCode, Converter={StaticResource BoolToVisibility}}">
+                        <Button Content="保存" Command="{Binding SaveCodeCommand}"
+                                Width="60" Height="24" Margin="0,0,4,0" Foreground="DarkGreen"/>
+                        <Button Content="キャンセル" Command="{Binding CancelEditCodeCommand}"
+                                Width="80" Height="24"/>
+                    </StackPanel>
+
+                    <avalonEdit:TextEditor
+                        Grid.Row="1"
+                        x:Name="CodeEditor"
+                        SyntaxHighlighting="TSQL"
+                        FontFamily="Consolas" FontSize="13"
+                        ShowLineNumbers="True"
+                        IsReadOnly="True"
+                        Margin="4"/>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+    </DockPanel>
+</Window>

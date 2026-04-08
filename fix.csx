@@ -1,0 +1,4 @@
+var file = @"C:\dev\Project\SqlServerTool\Views\TableDetailWindow.xaml";
+var text = File.ReadAllText(file, System.Text.Encoding.UTF8);
+var old1 = "            <TextBlock Grid.Row=\"0\" Text=\"■ 実行SQLログ（このセッション）\"\n                       FontSize=\"11\" FontWeight=\"Bold\" Foreground=\"DarkBlue\"\n                       Margin=\"6,3,0,1\"/>\n            <ListBox Grid.Row=\"1\" x:Name=\"SqlLogList\"\n                     ItemsSource=\"{Binding SessionLog}\"\n                     FontFamily=\"Consolas\" FontSize=\"11\"\n                     ScrollViewer.HorizontalScrollBarVisibility=\"Auto\">\n                <ListBox.ItemTemplate>\n                    <DataTemplate>\n                        <TextBlock Text=\"{Binding Display}\" TextWrapping=\"NoWrap\"/>\n                    </DataTemplate>\n                </ListBox.ItemTemplate>\n            </ListBox>";
+Console.WriteLine("Found: " + text.Contains(old1));
