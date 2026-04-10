@@ -20,66 +20,9 @@
                    Text="{Binding TableName, StringFormat='テーブル：{0}'}"
                    FontWeight="Bold" Margin="0,0,0,8"/>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Fields}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Margin="0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="160"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="60"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- 列名・論理名・型 -->
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ColumnName}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding LogicalName}"
-                                           Foreground="DarkBlue" FontSize="10"
-                                           Visibility="{Binding HasLogicalName,
-                                               Converter={StaticResource BoolToVisibility}}"/>
-                                <TextBlock Text="{Binding DataType}"
-                                           Foreground="Gray" FontSize="10"/>
-                                <TextBlock Text="PK" Foreground="DarkBlue"
-                                           FontSize="10" FontWeight="Bold"
-                                           Visibility="{Binding IsPrimaryKey,
-                                           Converter={StaticResource BoolToVisibility}}"/>
-                                <TextBlock Text="IDENTITY" Foreground="Gray"
-                                           FontSize="10" FontStyle="Italic"
-                                           Visibility="{Binding IsIdentity,
-                                           Converter={StaticResource BoolToVisibility}}"/>
-                            </StackPanel>
-
-                            <!-- IDENTITY列は自動採番表示 -->
-                            <TextBlock Grid.Column="1" Grid.ColumnSpan="2"
-                                       Text="（自動採番 - 入力不要）"
-                                       Foreground="Gray" FontStyle="Italic"
-                                       VerticalAlignment="Center" Margin="4,0"
-                                       Visibility="{Binding IsIdentity,
-                                           Converter={StaticResource BoolToVisibility}}"/>
-
-                            <!-- 通常列の値入力 -->
-                            <TextBox Grid.Column="1"
-                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                     IsEnabled="{Binding IsNull, Converter={StaticResource InvertBool}}"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     MinHeight="28" MaxHeight="80"
-                                     VerticalScrollBarVisibility="Auto"
-                                     Margin="4,0"
-                                     Visibility="{Binding IsNotIdentity, Converter={StaticResource BoolToVisibility}}"/>
-
-                            <!-- NULLチェック（IDENTITY以外） -->
-                            <CheckBox Grid.Column="2"
-                                      Content="NULL"
-                                      IsChecked="{Binding IsNull}"
-                                      VerticalAlignment="Center"
-                                      Visibility="{Binding IsNotIdentity, Converter={StaticResource BoolToVisibility}}"/>
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+        <!-- フィールドレイアウトはコードビハインドで動的生成。
+             MAX 型フィールドがある場合は * 行として拡張される。 -->
+        <Grid Grid.Row="1" x:Name="FieldsGrid"/>
 
         <Grid Grid.Row="2" Margin="0,12,0,0">
             <Button Content="新規追加" Width="90" HorizontalAlignment="Left"

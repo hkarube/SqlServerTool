@@ -51,6 +51,17 @@ namespace SqlServerTool.ViewModels
         public bool IsIdentity    { get; set; }
         public bool IsNotIdentity  => !IsIdentity;
         public bool HasLogicalName => !string.IsNullOrEmpty(LogicalName);
+
+        /// <summary>
+        /// 画面サイズに合わせて縦方向に伸長すべき型か。
+        /// (n)varchar(MAX) / (n)text / xml / image / varbinary(MAX) 等が対象。
+        /// </summary>
+        public bool IsMaxType =>
+            DataType.Contains("MAX", StringComparison.OrdinalIgnoreCase) ||
+            DataType.Equals("text",  StringComparison.OrdinalIgnoreCase) ||
+            DataType.Equals("ntext", StringComparison.OrdinalIgnoreCase) ||
+            DataType.Equals("xml",   StringComparison.OrdinalIgnoreCase) ||
+            DataType.Equals("image", StringComparison.OrdinalIgnoreCase);
         public string OriginalValue { get; set; } = string.Empty;
 
         [ObservableProperty]

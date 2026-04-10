@@ -11,7 +11,9 @@
         Closing="Window_Closing">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
-        <h:InvertBoolConverter x:Key="InvertBool"/>
+        <h:InvertBoolConverter        x:Key="InvertBool"/>
+        <h:NullBackgroundConverter    x:Key="NullBackground"/>
+        <h:DbNullDisplayConverter     x:Key="NullDisplay"/>
 
         <!-- SQL Server データ型一覧（編集可能ComboBox用） -->
         <x:Array x:Key="SqlDataTypes" Type="sys:String">
@@ -230,7 +232,26 @@
                               SelectionMode="Extended"
                               SelectionUnit="FullRow"
                               GridLinesVisibility="Horizontal"
-                              AlternatingRowBackground="#F5F8FF" Margin="4"/>
+                              AlternatingRowBackground="#F5F8FF" Margin="4"
+                              RowHeight="22"
+                              AutoGeneratingColumn="ResultGrid_AutoGeneratingColumn">
+                        <!-- NULL セルを黄色背景にする。
+                             DbNullDisplayConverter が "(NULL)" 文字列に変換済みなので
+                             Content.Text == "(NULL)" をトリガーとして使用する。 -->
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Style.Triggers>
+                                    <DataTrigger Value="(NULL)">
+                                        <DataTrigger.Binding>
+                                            <Binding RelativeSource="{RelativeSource Self}"
+                                                     Path="Content.Text"/>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="Background" Value="#FFF080"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
+                    </DataGrid>
                 </Grid>
             </TabItem>
 

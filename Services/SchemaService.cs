@@ -419,6 +419,41 @@ namespace SqlServerTool.Services
             return list;
         }
 
+        // ─── テーブル新規作成 ────────────────────────────────────────────────
+
+        public void CreateTable(string tableName, IReadOnlyList<Models.EditableColumnInfo> columns)
+        {
+            if (columns.Count == 0)
+                throw new ArgumentException("列を1つ以上定義してください。");
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"CREATE TABLE [{tableName}] (");
+
+            var pkCols = columns.Where(c => c.IsPrimaryKey).Select(c => c.ColumnName).ToList();
+
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var col   = columns[i];
+                var comma = (i < columns.Count - 1 || pkCols.Count > 0) ? "," : "";
+                var nullable = col.IsNullable ? "NULL" : "NOT NULL";
+                var def = string.IsNullOrWhiteSpace(col.DefaultValue)
+                    ? "" : $" DEFAULT {col.DefaultValue}";
+                sb.AppendLine($"    [{col.ColumnName}] {col.DataType} {nullable}{def}{comma}");
+            }
+
+            if (pkCols.Count > 0)
+            {
+                var pkList = string.Join(", ", pkCols.Select(c => $"[{c}]"));
+                sb.AppendLine($"    CONSTRAINT [PK_{tableName}] PRIMARY KEY ({pkList})");
+            }
+
+            sb.Append(")");
+
+            using var conn = _dbService.GetConnection();
+            conn.Open();
+            new SqlCommand(sb.ToString(), conn).ExecuteNonQuery();
+        }
+
         // ─── テーブルコピー ───────────────────────────────────────────────
 
         public void CopyTable(string sourceName, string destName)

@@ -1,12 +1,15 @@
+using SqlServerTool.Helpers;
 using SqlServerTool.Models;
 using SqlServerTool.ViewModels;
 using System.Data;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
-using WpfMsg  = System.Windows.MessageBox;
-using WpfMsgB = System.Windows.MessageBoxButton;
-using WpfMsgI = System.Windows.MessageBoxImage;
-using WpfMsgR = System.Windows.MessageBoxResult;
+using WpfBinding = System.Windows.Data.Binding;
+using WpfMsg    = System.Windows.MessageBox;
+using WpfMsgB   = System.Windows.MessageBoxButton;
+using WpfMsgI   = System.Windows.MessageBoxImage;
+using WpfMsgR   = System.Windows.MessageBoxResult;
 
 namespace SqlServerTool.Views
 {
@@ -84,6 +87,38 @@ namespace SqlServerTool.Views
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             _sourceInfo.IsOpen = false;
+        }
+
+        // ─── 結果グリッド：自動列生成 ─────────────────────────────────────────
+
+        private static readonly NullBackgroundConverter _nullBg      = new();
+        private static readonly DbNullDisplayConverter  _nullDisplay = new();
+
+        /// <summary>
+        /// "(NULL)" 表示・テキスト省略（1行）の ElementStyle を設定する。
+        /// NULL 背景色は ResultGrid の CellStyle DataTrigger（XAML）で処理。
+        /// </summary>
+        private void ResultGrid_AutoGeneratingColumn(
+            object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            if (e.Column is not DataGridTextColumn textCol) return;
+
+            var colName = e.PropertyName;
+
+            // ── TextBlock 書式（1行・省略表示） ───────────────────────────────
+            var elemStyle = new Style(typeof(TextBlock));
+            elemStyle.Setters.Add(new Setter(TextBlock.TextTrimmingProperty,
+                TextTrimming.CharacterEllipsis));
+            elemStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty,
+                VerticalAlignment.Center));
+            textCol.ElementStyle = elemStyle;
+
+            // ── "(NULL)" 文字列表示 ────────────────────────────────────────────
+            textCol.Binding = new WpfBinding($"[{colName}]")
+            {
+                Converter = _nullDisplay,
+                Mode      = System.Windows.Data.BindingMode.OneWay
+            };
         }
 
         private void DeleteRowButton_Click(object sender, RoutedEventArgs e)

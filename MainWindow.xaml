@@ -69,6 +69,11 @@
                             Command="{Binding DataContext.CopyObjectCommand,
                                       RelativeSource={RelativeSource AncestorType=Window}}"
                             CommandParameter="{Binding ElementName=ObjectGrid, Path=SelectedItems}"/>
+                    <Button Content="新規作成"
+                            Width="75" Height="24" Margin="4,0,0,0"
+                            Foreground="DarkGreen"
+                            Command="{Binding DataContext.CreateTableCommand,
+                                      RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </StackPanel>
 
             <DataGrid x:Name="ObjectGrid" DockPanel.Dock="Top"
@@ -80,6 +85,7 @@
                       GridLinesVisibility="Horizontal"
                       AlternatingRowBackground="#F5F8FF"
                       MouseDoubleClick="ObjectGrid_MouseDoubleClick"
+                      SelectionChanged="ObjectGrid_SelectionChanged"
                       Margin="4">
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
@@ -142,7 +148,10 @@
                 <MenuItem Header="バックアップ(_B)..." Command="{Binding BackupCommand}"/>
                 <MenuItem Header="リストア(_R)..."     Command="{Binding RestoreCommand}"/>
                 <Separator/>
+                <MenuItem Header="データ移行(_M)..." Command="{Binding OpenDataMigrationCommand}"/>
+                <Separator/>
                 <MenuItem Header="スクリプト出力(_S)..." Command="{Binding OpenScriptDialogCommand}"/>
+                <MenuItem Header="テーブル定義書出力(_D)..." Command="{Binding ExportTableDefinitionMenuCommand}"/>
                 <Separator/>
                 <MenuItem Header="SQL 実行履歴(_H)..." Command="{Binding OpenSqlHistoryCommand}"/>
                 <Separator/>

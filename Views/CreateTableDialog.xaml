@@ -1,0 +1,118 @@
+<Window x:Class="SqlServerTool.Views.CreateTableDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="新規テーブル作成" Height="480" Width="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <x:Array x:Key="SqlDataTypes" Type="sys:String">
+            <sys:String>int</sys:String>
+            <sys:String>bigint</sys:String>
+            <sys:String>smallint</sys:String>
+            <sys:String>tinyint</sys:String>
+            <sys:String>bit</sys:String>
+            <sys:String>decimal(18,2)</sys:String>
+            <sys:String>numeric(18,4)</sys:String>
+            <sys:String>float</sys:String>
+            <sys:String>money</sys:String>
+            <sys:String>datetime</sys:String>
+            <sys:String>datetime2(7)</sys:String>
+            <sys:String>date</sys:String>
+            <sys:String>char(10)</sys:String>
+            <sys:String>nchar(10)</sys:String>
+            <sys:String>varchar(50)</sys:String>
+            <sys:String>varchar(100)</sys:String>
+            <sys:String>varchar(200)</sys:String>
+            <sys:String>varchar(MAX)</sys:String>
+            <sys:String>nvarchar(50)</sys:String>
+            <sys:String>nvarchar(100)</sys:String>
+            <sys:String>nvarchar(200)</sys:String>
+            <sys:String>nvarchar(MAX)</sys:String>
+            <sys:String>uniqueidentifier</sys:String>
+            <sys:String>varbinary(MAX)</sys:String>
+        </x:Array>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- テーブル名 -->
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="テーブル名" VerticalAlignment="Center"/>
+            <TextBox   Grid.Column="1" x:Name="TableNameBox" Height="26"/>
+        </Grid>
+
+        <!-- 列操作ボタン -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+            <Button Content="列を追加" Width="80" Height="24" Margin="0,0,8,0"
+                    Click="AddColumnButton_Click"/>
+            <Button Content="選択列を削除" Width="95" Height="24" Foreground="DarkRed"
+                    Click="RemoveColumnButton_Click"/>
+        </StackPanel>
+
+        <!-- 列グリッドヘッダー区切り -->
+        <Border Grid.Row="2" BorderBrush="#CCCCCC" BorderThickness="0,0,0,1" Margin="0,0,0,2"/>
+
+        <!-- 列定義グリッド -->
+        <DataGrid Grid.Row="3" x:Name="ColumnsGrid"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  GridLinesVisibility="Horizontal"
+                  AlternatingRowBackground="#FFF8F0"
+                  Margin="0,0,0,8">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="列名" Width="150"
+                    Binding="{Binding ColumnName, UpdateSourceTrigger=PropertyChanged}"/>
+                <DataGridTemplateColumn Header="データ型" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DataType}" Margin="4,0" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox IsEditable="True"
+                                      Text="{Binding DataType, UpdateSourceTrigger=PropertyChanged}"
+                                      ItemsSource="{StaticResource SqlDataTypes}"
+                                      IsTextSearchEnabled="True"
+                                      Margin="0" Padding="2,0"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridCheckBoxColumn Header="NULL可" Width="55"
+                    Binding="{Binding IsNullable, UpdateSourceTrigger=PropertyChanged}"/>
+                <DataGridCheckBoxColumn Header="PK" Width="40"
+                    Binding="{Binding IsPrimaryKey, UpdateSourceTrigger=PropertyChanged}"/>
+                <DataGridTextColumn Header="デフォルト" Width="*"
+                    Binding="{Binding DefaultValue, UpdateSourceTrigger=PropertyChanged}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- エラーメッセージ -->
+        <TextBlock Grid.Row="4" x:Name="ErrorText"
+                   Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Visibility="Collapsed"/>
+
+        <!-- ボタン -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="実行" Width="70" Margin="0,0,8,0"
+                    Click="OkButton_Click" IsDefault="True"/>
+            <Button Content="キャンセル" Width="80" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

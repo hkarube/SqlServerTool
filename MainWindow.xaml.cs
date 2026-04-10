@@ -24,6 +24,12 @@ namespace SqlServerTool
                 Vm.OpenDetailCommand.Execute(item);
         }
 
+        private void ObjectGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is DataGrid grid)
+                Vm.SelectedObjectInfos = grid.SelectedItems.Cast<ObjectInfo>().ToList();
+        }
+
         private void ExportDefinition_Click(object sender, RoutedEventArgs e)
         {
             if (sender is MenuItem mi

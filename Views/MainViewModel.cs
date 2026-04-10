@@ -304,6 +304,9 @@ namespace SqlServerTool.ViewModels
             }
         }
 
+        // ── 一覧の選択アイテム（メニューコマンド用） ──────────────────────────
+        public List<ObjectInfo> SelectedObjectInfos { get; set; } = new();
+
         // ── 左ペインのカテゴリ選択 ────────────────────────────────────────────
 
         [RelayCommand]
@@ -433,6 +436,45 @@ namespace SqlServerTool.ViewModels
             }
         }
 
+        // ── テーブル新規作成 ──────────────────────────────────────────────────
+
+        [RelayCommand]
+        private void CreateTable()
+        {
+            if (_schemaService == null)
+            {
+                WpfMsg.Show("先に接続してください。", "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+
+            if (CurrentCategory != "Tables")
+            {
+                WpfMsg.Show("テーブル一覧を表示中のときのみ新規作成できます。",
+                    "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+
+            var existingNames = _listTab.Objects
+                .Select(o => o.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var dialog = new Views.CreateTableDialog(existingNames)
+            {
+                Owner = WpfApp.Current.MainWindow
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                _schemaService.CreateTable(dialog.NewTableName, dialog.Columns);
+                LoadObjectList(CurrentCategory);
+            }
+            catch (Exception ex)
+            {
+                WpfMsg.Show($"テーブル作成エラー: {ex.Message}", "エラー", WpfMsgB.OK, WpfMsgI.Error);
+            }
+        }
+
         // ── テーブルコピー ────────────────────────────────────────────────────
 
         [RelayCommand]
@@ -544,6 +586,21 @@ namespace SqlServerTool.ViewModels
             dialog.ShowDialog();
         }
 
+        // ── テーブル定義書 Excel 出力（メニューから） ────────────────────────
+
+        [RelayCommand]
+        private void ExportTableDefinitionMenu()
+        {
+            if (_schemaService == null)
+            {
+                WpfMsg.Show("先に接続してください。", "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+            var vm     = new ExportDefinitionViewModel(_schemaService, _appSettings);
+            var dialog = new Views.ExportDefinitionDialog(vm) { Owner = WpfApp.Current.MainWindow };
+            dialog.ShowDialog();
+        }
+
         // ── テーブル定義書 Excel 出力 ─────────────────────────────────────────
 
         [RelayCommand]
@@ -617,6 +674,22 @@ namespace SqlServerTool.ViewModels
         {
             var win = new Views.SqlHistoryWindow(_dbService) { Owner = WpfApp.Current.MainWindow };
             win.Show();
+        }
+
+        // ── データ移行 ────────────────────────────────────────────────────────
+
+        [RelayCommand]
+        private void OpenDataMigration()
+        {
+            if (!IsConnected)
+            {
+                WpfMsg.Show("先に接続してください。", "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+            var migService = new Services.DataMigrationService(_dbService);
+            var vm         = new DataMigrationViewModel(migService, _appSettings);
+            var dialog     = new Views.DataMigrationWizard(vm) { Owner = WpfApp.Current.MainWindow };
+            dialog.ShowDialog();
         }
 
         // ── バックアップ ──────────────────────────────────────────────────────

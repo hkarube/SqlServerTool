@@ -1,0 +1,589 @@
+<Window x:Class="SqlServerTool.Views.DataMigrationWizard"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:h="clr-namespace:SqlServerTool.Helpers"
+        Title="データ移行ウィザード"
+        Width="840" Height="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <h:InvertBoolConverter        x:Key="InvertBool"/>
+
+        <!-- ステップ番号ラベルスタイル -->
+        <Style x:Key="StepLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin"     Value="0,0,0,8"/>
+            <Setter Property="Foreground" Value="#2B579A"/>
+        </Style>
+
+        <!-- ラベルスタイル -->
+        <Style x:Key="FormLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,6,0"/>
+        </Style>
+
+        <!-- テキストボックス共通 -->
+        <Style TargetType="TextBox">
+            <Setter Property="Height"                   Value="24"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding"                  Value="4,0"/>
+        </Style>
+
+        <!-- PasswordBox 共通 -->
+        <Style TargetType="PasswordBox">
+            <Setter Property="Height"                   Value="24"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding"                  Value="4,0"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- ─── ステップインジケーター ──────────────────────────────────── -->
+        <Border DockPanel.Dock="Top" Background="#F5F5F5" BorderBrush="#DDDDDD"
+                BorderThickness="0,0,0,1" Padding="16,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Border x:Name="StepHeader1" Background="#2B579A" CornerRadius="12" Padding="12,4" Margin="4,0">
+                    <TextBlock Text="① テーブル選択" Foreground="White" FontWeight="SemiBold"/>
+                </Border>
+                <TextBlock Text="▶" VerticalAlignment="Center" Foreground="Gray" Margin="4,0"/>
+                <Border x:Name="StepHeader2" Background="#E0E0E0" CornerRadius="12" Padding="12,4" Margin="4,0">
+                    <TextBlock x:Name="StepHeader2Text" Text="② 出力先設定" Foreground="Gray" FontWeight="SemiBold"/>
+                </Border>
+                <TextBlock Text="▶" VerticalAlignment="Center" Foreground="Gray" Margin="4,0"/>
+                <Border x:Name="StepHeader3" Background="#E0E0E0" CornerRadius="12" Padding="12,4" Margin="4,0">
+                    <TextBlock x:Name="StepHeader3Text" Text="③ 実行" Foreground="Gray" FontWeight="SemiBold"/>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- ─── ナビゲーションボタン ─────────────────────────────────────── -->
+        <Border DockPanel.Dock="Bottom" Background="#F5F5F5" BorderBrush="#DDDDDD"
+                BorderThickness="0,1,0,0" Padding="12,8">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="キャンセル" Width="90" Height="30" Margin="8,0,0,0"
+                        Click="Cancel_Click"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"/>
+                <Button DockPanel.Dock="Right" Content="次へ ▶" Width="90" Height="30"
+                        x:Name="NextButton"
+                        Click="NextButton_Click"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"/>
+                <Button DockPanel.Dock="Right" Content="◀ 前へ" Width="90" Height="30" Margin="0,0,8,0"
+                        x:Name="PrevButton"
+                        Visibility="Collapsed"
+                        Command="{Binding PreviousStepCommand}"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"/>
+            </DockPanel>
+        </Border>
+
+        <!-- ─── メインコンテンツ（隠し TabControl） ──────────────────────── -->
+        <TabControl x:Name="StepTabControl" SelectedIndex="{Binding CurrentStep}"
+                    BorderThickness="0" Background="Transparent">
+            <TabControl.ItemContainerStyle>
+                <Style TargetType="TabItem">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Style>
+            </TabControl.ItemContainerStyle>
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 STEP 1: テーブル選択 ＆ 出力方式
+                 ═══════════════════════════════════════════════════════════════ -->
+            <TabItem>
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Style="{StaticResource StepLabel}"
+                               Text="Step 1: コピー対象テーブルと出力方法を選択してください"/>
+
+                    <!-- 出力方式 -->
+                    <GroupBox Grid.Row="1" Header="出力方法" Margin="0,0,0,10" Padding="10,6">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="DB 間コピー" IsChecked="{Binding IsDbMode, Mode=OneWay}"
+                                         Checked="OutputMethod_Checked" Tag="DB"
+                                         Margin="0,0,24,0" VerticalAlignment="Center"/>
+                            <RadioButton Content="CSV 出力" IsChecked="{Binding IsCsvMode, Mode=OneWay}"
+                                         Checked="OutputMethod_Checked" Tag="CSV"
+                                         Margin="0,0,24,0" VerticalAlignment="Center"/>
+                            <RadioButton Content="既存 CSV から DB へインポート"
+                                         IsChecked="{Binding IsCsvImportMode, Mode=OneWay}"
+                                         Checked="OutputMethod_Checked" Tag="CSVImport"
+                                         VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- テーブル一覧（DB / CSV モード） -->
+                    <GroupBox Grid.Row="2" Header="テーブル一覧" Padding="8,6"
+                              Visibility="{Binding IsNotCsvImportMode, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                                <Button Content="全選択" Width="70" Height="24" Margin="0,0,6,0"
+                                        Command="{Binding SelectAllCommand}"/>
+                                <Button Content="全解除" Width="70" Height="24"
+                                        Command="{Binding DeselectAllCommand}"/>
+                                <TextBlock VerticalAlignment="Center" Margin="16,0,0,0"
+                                           Foreground="Gray" FontSize="11"
+                                           Text="{Binding Tables.Count, StringFormat=全 \{0\} テーブル}"/>
+                            </StackPanel>
+
+                            <DataGrid ItemsSource="{Binding Tables}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="False"
+                                      GridLinesVisibility="Horizontal"
+                                      AlternatingRowBackground="#F5F8FF"
+                                      HeadersVisibility="Column">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn Header="選択" Width="48"
+                                                            Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <DataGridTextColumn Header="テーブル名" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="件数" Binding="{Binding RowCountText}" Width="90" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="Padding"             Value="0,0,6,0"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </GroupBox>
+
+                    <!-- 既存 CSV インポートモードの説明（テーブル一覧の代わりに表示） -->
+                    <Border Grid.Row="2"
+                            Background="#EEF4FF" BorderBrush="#C0D4F0" BorderThickness="1"
+                            CornerRadius="4" Padding="14,12"
+                            Visibility="{Binding IsCsvImportMode, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"
+                                       Text="既存 CSV から DB へインポートモード"/>
+                            <TextBlock TextWrapping="Wrap" Foreground="#444" FontSize="12">
+                                指定したフォルダ内の CSV ファイル（テーブル名.csv）を読み込み、
+                                宛先 DB の既存テーブルにインポートします。
+                            </TextBlock>
+                            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11" Margin="0,6,0,0">
+                                ・ 手動で作成した CSV ファイルをテストデータとして取り込む用途にも利用できます。&#10;
+                                ・ インポート元フォルダと宛先 DB の接続設定は次のステップで行います。
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 STEP 2: 出力先設定
+                 ═══════════════════════════════════════════════════════════════ -->
+            <TabItem>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16">
+                        <TextBlock Style="{StaticResource StepLabel}"
+                                   Text="Step 2: 出力先の設定を行ってください"/>
+
+                        <!-- ① CSV 出力設定（CSV 出力モードのみ） -->
+                        <GroupBox Header="CSV 出力設定" Padding="10,8" Margin="0,0,0,10"
+                                  Visibility="{Binding IsCsvMode, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="出力フォルダ"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                         Text="{Binding CsvOutputFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Grid.Row="0" Grid.Column="2" Content="参照..." Width="56" Margin="6,0,0,6"
+                                        Command="{Binding BrowseCsvFolderCommand}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="文字コード"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                          ItemsSource="{Binding EncodingOptions}"
+                                          SelectedItem="{Binding CsvEncoding}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="区切り文字"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                          ItemsSource="{Binding DelimiterOptions}"
+                                          SelectedItem="{Binding CsvDelimiter}"/>
+
+                                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                                          Content="ヘッダー行を含める（列名を1行目に出力）"
+                                          IsChecked="{Binding CsvIncludeHeader}"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- ② CSVImport ソース設定（既存 CSV インポートモードのみ） -->
+                        <GroupBox Header="インポート元 CSV フォルダ" Padding="10,8" Margin="0,0,0,10"
+                                  Visibility="{Binding IsCsvImportMode, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="CSVフォルダ"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                         Text="{Binding CsvImportFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Grid.Row="0" Grid.Column="2" Content="参照..." Width="56" Margin="6,0,0,6"
+                                        Command="{Binding BrowseCsvImportFolderCommand}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="文字コード"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                          ItemsSource="{Binding EncodingOptions}"
+                                          SelectedItem="{Binding CsvEncoding}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="区切り文字"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                          ItemsSource="{Binding DelimiterOptions}"
+                                          SelectedItem="{Binding CsvDelimiter}"/>
+
+                                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                                          Content="ヘッダー行あり（1行目を列名として使用）"
+                                          IsChecked="{Binding CsvIncludeHeader}"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- ③ CSV→DB オプション（CSV 出力モードのみ） -->
+                        <GroupBox Header="この後 DB にもインポートする（任意）"
+                                  Padding="10,8" Margin="0,0,0,10"
+                                  Visibility="{Binding IsCsvMode, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <CheckBox Content="CSV エクスポート後、宛先 DB にもインポートする"
+                                          IsChecked="{Binding CopyCsvToDb}"/>
+                                <TextBlock Text="※ 宛先 DB の接続設定を以下で行ってください。"
+                                           Foreground="Gray" FontSize="11" Margin="20,4,0,0"
+                                           Visibility="{Binding CopyCsvToDb, Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- ④ DB 宛先選択 Existing/New（DB / CSVImport モード） -->
+                        <GroupBox Header="コピー先" Margin="0,0,0,10" Padding="10,8"
+                                  Visibility="{Binding IsDbOrCsvImport, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <RadioButton Content="既存のデータベース"
+                                             IsChecked="{Binding IsExistingDb, Mode=OneWay}"
+                                             Checked="DestDbMode_Checked" Tag="Existing"
+                                             Margin="0,0,0,4"/>
+                                <RadioButton Content="新規データベースを作成してコピー"
+                                             IsChecked="{Binding IsNewDb, Mode=OneWay}"
+                                             Checked="DestDbMode_Checked" Tag="New"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- ⑤ 既存 DB 接続設定（DB+既存 / CSV→DB / CSVImport モードで共有） -->
+                        <GroupBox Visibility="{Binding ShowExistingDbSettings, Converter={StaticResource BoolToVis}}"
+                                  Header="宛先DB 接続設定" Margin="0,0,0,10" Padding="10,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="サーバー名"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                         Text="{Binding DestServer, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="認証"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                            Orientation="Horizontal" Margin="0,0,0,6">
+                                    <RadioButton Content="Windows 認証" IsChecked="{Binding DestWindowsAuth, Mode=OneWay}"
+                                                 Checked="DestAuth_Checked" Tag="Windows"
+                                                 Margin="0,0,16,0" VerticalAlignment="Center"/>
+                                    <RadioButton Content="SQL Server 認証"
+                                                 Checked="DestAuth_Checked" Tag="SqlServer"
+                                                 VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="ユーザーID"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"
+                                           IsEnabled="{Binding DestWindowsAuth, Converter={StaticResource InvertBool}}"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                         Text="{Binding DestUserId, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding DestWindowsAuth, Converter={StaticResource InvertBool}}"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="パスワード"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"
+                                           IsEnabled="{Binding DestWindowsAuth, Converter={StaticResource InvertBool}}"/>
+                                <PasswordBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                             x:Name="DestPasswordBox" Margin="0,0,0,6"
+                                             IsEnabled="{Binding DestWindowsAuth, Converter={StaticResource InvertBool}}"/>
+
+                                <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                                            Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Button Content="接続テスト"  Width="90" Height="24" Margin="0,0,8,0"
+                                            Command="{Binding TestDestConnectionCommand}"/>
+                                    <Button Content="DB一覧取得" Width="90" Height="24"
+                                            Command="{Binding LoadDestDatabasesCommand}"/>
+                                    <TextBlock Text="{Binding DestConnStatus}" VerticalAlignment="Center"
+                                               Margin="12,0,0,0" Foreground="DarkBlue" FontSize="11"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="データベース"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,0"/>
+                                <ComboBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding DestDatabases}"
+                                          SelectedItem="{Binding DestDatabase}"
+                                          IsEditable="True"
+                                          Text="{Binding DestDatabase, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- ⑥ 新規 DB 設定（DB モード + 新規のみ） -->
+                        <GroupBox Visibility="{Binding IsDbModeAndNew, Converter={StaticResource BoolToVis}}"
+                                  Header="新規DB 作成設定" Margin="0,0,0,10" Padding="10,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="サーバー名"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                         Text="{Binding NewDbServer, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="ユーザーID"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                         Text="{Binding NewDbUserId, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="パスワード"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <PasswordBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                             x:Name="NewDbPasswordBox" Margin="0,0,0,6"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="新規DB名"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,6"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                         Text="{Binding NewDbName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="ファイル保存先"
+                                           Style="{StaticResource FormLabel}" Margin="0,0,6,0"
+                                           TextWrapping="Wrap"/>
+                                <TextBox Grid.Row="4" Grid.Column="1"
+                                         Text="{Binding NewDbDataFilePath, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="省略時はSQL Serverの既定フォルダ"/>
+                                <Button Grid.Row="4" Grid.Column="2" Content="参照..." Width="56" Margin="6,0,0,0"
+                                        Command="{Binding BrowseDataFilePathCommand}"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- ⑦ コピーオプション（DB モードのみ） -->
+                        <GroupBox Header="コピーオプション" Margin="0,0,0,10" Padding="10,8"
+                                  Visibility="{Binding IsDbMode, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <CheckBox Content="テーブル構造をコピーする（CREATE TABLE）"
+                                          IsChecked="{Binding CopyStructure}"    Margin="0,0,0,4"/>
+                                <CheckBox Content="データをコピーする（INSERT）"
+                                          IsChecked="{Binding CopyData}"          Margin="0,0,0,4"/>
+                                <CheckBox Content="自動採番（IDENTITY）を元の値で保持する"
+                                          IsChecked="{Binding PreserveIdentity}"  Margin="0,0,0,4"/>
+                                <CheckBox Content="外部キー制約を一時的に無効化してコピーする"
+                                          IsChecked="{Binding DisableFk}"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- ⑧ インポートオプション（CSV→DB / CSVImport モード） -->
+                        <GroupBox Header="インポートオプション" Padding="10,8" Margin="0,0,0,10"
+                                  Visibility="{Binding IsCsvImportOrCsvToDb, Converter={StaticResource BoolToVis}}">
+                            <CheckBox Content="インポート前にテーブルのデータを削除する（TRUNCATE / DELETE）"
+                                      IsChecked="{Binding TruncateBeforeImport}"/>
+                        </GroupBox>
+
+                        <!-- ⑨ CSV 出力のみ実行ボタン（CSV 出力モードのみ） -->
+                        <Border Margin="0,4,0,0"
+                                Visibility="{Binding IsCsvMode, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="CSV 出力のみ実行 ▶" Width="160" Height="30"
+                                        Background="#2B7A2B" Foreground="White"
+                                        Command="{Binding ExportCsvOnlyCommand}"
+                                        ToolTip="CSV エクスポートのみ行い、実行画面へ進みます（DB へのコピーは行いません）"/>
+                                <TextBlock VerticalAlignment="Center" Margin="12,0,0,0"
+                                           Foreground="Gray" FontSize="11"
+                                           Text="DB へのインポートも行う場合は「次へ ▶」を押してください"/>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 STEP 3: 実行プレビュー
+                 ═══════════════════════════════════════════════════════════════ -->
+            <TabItem>
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="130"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Style="{StaticResource StepLabel}"
+                               Text="Step 3: 実行プレビュー・実行"/>
+
+                    <!-- 宛先説明 -->
+                    <Border Grid.Row="1" Background="#EEF4FF" BorderBrush="#C0D4F0"
+                            BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding PreviewDestination}" FontWeight="SemiBold"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- 循環参照警告 -->
+                    <Border Grid.Row="2" Margin="0,0,0,8" CornerRadius="4" Padding="10,6"
+                            Background="#FFF3CD" BorderBrush="#FFC107" BorderThickness="1"
+                            Visibility="{Binding HasCycleWarning, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding CycleWarning}" TextWrapping="Wrap"
+                                   Foreground="#856404" FontSize="11"/>
+                    </Border>
+
+                    <!-- プレビューテーブル -->
+                    <GroupBox Grid.Row="3" Header="実行順序（↑↓ボタンで順序を手動変更できます）" Padding="6,4">
+                        <DataGrid ItemsSource="{Binding PreviewTables}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal"
+                                  AlternatingRowBackground="#F5F8FF"
+                                  HeadersVisibility="Column">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status}" Value="完了">
+                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="完了(DB)">
+                                            <Setter Property="Background" Value="#C8E6C9"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="エラー">
+                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="実行中">
+                                            <Setter Property="Background" Value="#FFF8E1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="DBインポート中">
+                                            <Setter Property="Background" Value="#E3F2FD"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="テーブル名"       Binding="{Binding Name}"         Width="*"/>
+                                <DataGridTextColumn Header="件数"             Binding="{Binding RowCountText}"  Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="Padding"             Value="0,0,6,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="状態"             Binding="{Binding Status}"        Width="90"/>
+                                <DataGridTextColumn Header="エラーメッセージ" Binding="{Binding ErrorMessage}"  Width="200"/>
+                                <DataGridTemplateColumn Header="順序変更" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Button Content="↑" Width="28" Height="20" Margin="0,0,2,0"
+                                                        Command="{Binding DataContext.MoveUpCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Content="↓" Width="28" Height="20"
+                                                        Command="{Binding DataContext.MoveDownCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+
+                    <!-- プログレスバー + 実行ボタン -->
+                    <Grid Grid.Row="4" Margin="0,8,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ProgressBar Grid.Column="0"
+                                     Value="{Binding Progress}" Maximum="1.0" Minimum="0"
+                                     Height="22"/>
+                        <Button Grid.Column="1" Content="失敗分を再実行" Width="110" Height="28" Margin="8,0,0,0"
+                                Command="{Binding RetryFailedCommand}"
+                                Visibility="{Binding HasFailedTables, Converter={StaticResource BoolToVis}}"
+                                IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"/>
+                        <Button Grid.Column="2" Content="▶ 実行開始" Width="100" Height="28" Margin="8,0,0,0"
+                                Foreground="White" Background="#2B579A"
+                                Command="{Binding StartExecutionCommand}"
+                                IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"/>
+                    </Grid>
+
+                    <!-- 実行ログ（クリップボードコピーボタン付き） -->
+                    <GroupBox Grid.Row="5" Padding="4">
+                        <GroupBox.Header>
+                            <DockPanel LastChildFill="False" Width="760">
+                                <TextBlock Text="実行ログ" VerticalAlignment="Center"/>
+                                <Button DockPanel.Dock="Right"
+                                        Content="ログをクリップボードにコピー"
+                                        Command="{Binding CopyLogToClipboardCommand}"
+                                        Height="20" Padding="8,0" Margin="8,0,0,0"
+                                        FontSize="10"
+                                        IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"/>
+                            </DockPanel>
+                        </GroupBox.Header>
+                        <ListBox ItemsSource="{Binding ExecutionLog}"
+                                 FontFamily="Consolas" FontSize="11"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
