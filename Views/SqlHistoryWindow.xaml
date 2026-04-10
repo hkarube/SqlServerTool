@@ -35,8 +35,12 @@
         </DataGrid>
 
         <Grid Grid.Row="1" Margin="0,8,0,0">
-            <Button Content="履歴をクリア" Width="110" HorizontalAlignment="Left"
-                    Click="ClearButton_Click" Foreground="DarkRed"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="履歴をクリア" Width="110" Margin="0,0,8,0"
+                        Click="ClearButton_Click" Foreground="DarkRed"/>
+                <Button Content="削除" Width="70"
+                        Click="DeleteButton_Click" Foreground="DarkRed"/>
+            </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="再適用 (ダブルクリック)" Width="160" Margin="0,0,8,0"
                         Click="ReapplyButton_Click" Foreground="DarkGreen"/>

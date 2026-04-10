@@ -64,6 +64,11 @@
                             Command="{Binding DataContext.RenameObjectCommand,
                                       RelativeSource={RelativeSource AncestorType=Window}}"
                             CommandParameter="{Binding ElementName=ObjectGrid, Path=SelectedItems}"/>
+                    <Button Content="コピー"
+                            Width="70" Height="24" Margin="4,0,0,0"
+                            Command="{Binding DataContext.CopyObjectCommand,
+                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding ElementName=ObjectGrid, Path=SelectedItems}"/>
                 </StackPanel>
 
             <DataGrid x:Name="ObjectGrid" DockPanel.Dock="Top"

@@ -21,6 +21,8 @@
                 <RowDefinition Height="6"/>
                 <RowDefinition Height="*" MinHeight="80"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="90"/>
             </Grid.RowDefinitions>
 
             <!-- ツールバー + AvalonEdit -->
@@ -83,6 +85,43 @@
                            Foreground="DarkBlue"
                            Margin="8,3" FontSize="12"/>
             </Border>
+
+            <!-- ログヘッダー -->
+            <Grid Grid.Row="4" Margin="0,2,0,1">
+                <TextBlock Text="■ 実行SQLログ（共通）"
+                           FontSize="11" FontWeight="Bold" Foreground="DarkBlue"
+                           VerticalAlignment="Center" Margin="6,0,0,0"/>
+                <Button Content="全履歴を開く" HorizontalAlignment="Right"
+                        FontSize="10" Padding="6,1" Margin="0,0,4,0"
+                        Click="OpenHistoryButton_Click"/>
+            </Grid>
+
+            <!-- ログリスト -->
+            <ListBox Grid.Row="5" x:Name="SqlLogList"
+                     ItemsSource="{Binding SqlLog}"
+                     FontFamily="Consolas" FontSize="11"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     MouseDoubleClick="SqlLogList_MouseDoubleClick">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="SQLをコピー" Click="SqlLogCopy_Click"/>
+                        <MenuItem Header="全文を表示" Click="SqlLogView_Click"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock TextWrapping="NoWrap">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="[{0:HH:mm:ss}] {1}: {2}">
+                                    <Binding Path="ExecutedAt"/>
+                                    <Binding Path="OperationType"/>
+                                    <Binding Path="SqlPreview"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </Grid>
 
         <!-- 垂直スプリッター -->

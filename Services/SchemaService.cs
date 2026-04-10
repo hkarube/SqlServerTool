@@ -419,6 +419,16 @@ namespace SqlServerTool.Services
             return list;
         }
 
+        // ─── テーブルコピー ───────────────────────────────────────────────
+
+        public void CopyTable(string sourceName, string destName)
+        {
+            using var conn = _dbService.GetConnection();
+            conn.Open();
+            var sql = $"SELECT * INTO [{destName}] FROM [{sourceName}]";
+            new SqlCommand(sql, conn).ExecuteNonQuery();
+        }
+
         // ─── オブジェクト名変更 ───────────────────────────────────────────
 
         public void RenameObject(string oldName, string newName)

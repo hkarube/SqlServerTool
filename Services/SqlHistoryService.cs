@@ -26,6 +26,12 @@ namespace SqlServerTool.Services
             Save();
         }
 
+        public void Remove(SqlHistoryEntry entry)
+        {
+            Entries.Remove(entry);
+            Save();
+        }
+
         public void Clear()
         {
             Entries.Clear();

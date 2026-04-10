@@ -103,11 +103,17 @@ namespace SqlServerTool.ViewModels
                 DataRows     = data;
                 RowCountText = $"表示: {data.Rows.Count:#,##0} 件 / 全件: {total:#,##0} 件";
                 StatusMessage = string.Empty;
+                LogSql("SELECT", SqlText);
             }
             catch (Exception ex)
             {
                 RowCountText  = string.Empty;
                 StatusMessage = $"エラー: {ex.Message}";
+                System.Windows.MessageBox.Show(
+                    $"SQL実行エラー:\n\n{ex.Message}",
+                    "エラー",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
             }
         }
 

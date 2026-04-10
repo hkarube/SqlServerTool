@@ -52,6 +52,10 @@ namespace SqlServerTool.ViewModels
         [ObservableProperty] private string sqlText      = string.Empty;
         [ObservableProperty] private string statusMessage = string.Empty;
 
+        /// <summary>全クエリ共通の実行ログ（SqlHistoryService のグローバル履歴）</summary>
+        public ObservableCollection<SqlHistoryEntry> SqlLog
+            => SqlHistoryService.Instance.Entries;
+
         private DataTable? _resultTable;
         public DataTable? ResultTable
         {
@@ -142,12 +146,26 @@ namespace SqlServerTool.ViewModels
                     ResultTable   = null;
                     ResultTable   = dt;
                     StatusMessage = $"{dt.Rows.Count} 件取得しました";
+                    SqlHistoryService.Instance.Add(new SqlHistoryEntry
+                    {
+                        ExecutedAt    = DateTime.Now,
+                        OperationType = "SELECT",
+                        ObjectName    = "クエリ",
+                        Sql           = SqlText
+                    });
                 }
                 else
                 {
                     ResultTable   = null;
                     int affected  = cmd.ExecuteNonQuery();
                     StatusMessage = $"{affected} 件処理しました";
+                    SqlHistoryService.Instance.Add(new SqlHistoryEntry
+                    {
+                        ExecutedAt    = DateTime.Now,
+                        OperationType = "EXEC",
+                        ObjectName    = "クエリ",
+                        Sql           = SqlText
+                    });
                 }
             }
             catch (Exception ex)
@@ -412,6 +430,56 @@ namespace SqlServerTool.ViewModels
             catch (Exception ex)
             {
                 WpfMsg.Show($"名前変更エラー: {ex.Message}", "エラー", WpfMsgB.OK, WpfMsgI.Error);
+            }
+        }
+
+        // ── テーブルコピー ────────────────────────────────────────────────────
+
+        [RelayCommand]
+        private void CopyObject(System.Collections.IList? selectedItems)
+        {
+            if (_schemaService == null) return;
+
+            if (selectedItems == null || selectedItems.Count == 0)
+            {
+                WpfMsg.Show("コピーするオブジェクトを選択してください。",
+                    "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+            if (selectedItems.Count > 1)
+            {
+                WpfMsg.Show("コピーは1件ずつ行ってください。",
+                    "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+
+            var item = (ObjectInfo)selectedItems[0]!;
+
+            if (item.ObjectType != "TABLE")
+            {
+                WpfMsg.Show("コピーはテーブルのみ対応しています。",
+                    "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+
+            var existingNames = _listTab.Objects
+                .Select(o => o.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var dialog = new Views.CopyDialog(item.Name, existingNames)
+            {
+                Owner = WpfApp.Current.MainWindow
+            };
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                _schemaService.CopyTable(item.Name, dialog.DestName);
+                LoadObjectList(CurrentCategory);
+            }
+            catch (Exception ex)
+            {
+                WpfMsg.Show($"コピーエラー: {ex.Message}", "エラー", WpfMsgB.OK, WpfMsgI.Error);
             }
         }
 

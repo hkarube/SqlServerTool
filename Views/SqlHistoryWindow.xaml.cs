@@ -65,6 +65,16 @@ namespace SqlServerTool.Views
             }
         }
 
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (HistoryGrid.SelectedItem is not SqlHistoryEntry entry)
+            {
+                WpfMsg.Show("削除する行を選択してください。", "情報", WpfMsgB.OK, WpfMsgI.Information);
+                return;
+            }
+            SqlHistoryService.Instance.Remove(entry);
+        }
+
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             var r = WpfMsg.Show("履歴をすべてクリアしますか？", "確認",

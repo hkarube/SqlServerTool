@@ -1,3 +1,5 @@
+using SqlServerTool.Models;
+using SqlServerTool.Services;
 using SqlServerTool.ViewModels;
 using System.IO;
 using System.Text;
@@ -154,6 +156,45 @@ namespace SqlServerTool.Views
             if (!HasSqlFile(e.Data)) return;
             LoadSqlFile(e.Data);
             e.Handled = true;
+        }
+
+        // ─── SQL ログパネル ────────────────────────────────────────────────────
+
+        private void SqlLogList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (SqlLogList.SelectedItem is not SqlHistoryEntry entry) return;
+            SqlEditor.Text = entry.Sql;
+        }
+
+        private void SqlLogView_Click(object sender, RoutedEventArgs e)
+            => ShowLogEntry();
+
+        private void SqlLogCopy_Click(object sender, RoutedEventArgs e)
+        {
+            if (SqlLogList.SelectedItem is not SqlHistoryEntry entry) return;
+            for (int i = 0; i < 3; i++)
+            {
+                try { System.Windows.Clipboard.SetDataObject(entry.Sql, true); return; }
+                catch { System.Threading.Thread.Sleep(100); }
+            }
+        }
+
+        private void OpenHistoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new SqlHistoryWindow(null)
+            {
+                Owner = Window.GetWindow(this)
+            };
+            win.Show();
+        }
+
+        private void ShowLogEntry()
+        {
+            if (SqlLogList.SelectedItem is not SqlHistoryEntry entry) return;
+            new SqlPreviewDialog(entry.OperationType, entry.ObjectName, entry.Sql, viewOnly: true)
+            {
+                Owner = Window.GetWindow(this)
+            }.ShowDialog();
         }
 
         // ─── ヘルパー ─────────────────────────────────────────────────────────

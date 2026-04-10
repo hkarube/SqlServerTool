@@ -6,47 +6,45 @@ using WpfKeyArgs = System.Windows.Input.KeyEventArgs;
 
 namespace SqlServerTool.Views
 {
-    public partial class RenameDialog : Window
+    public partial class CopyDialog : Window
     {
-        private readonly string _currentName;
         private readonly ISet<string> _existingNames;
 
-        /// <summary>ユーザーが入力した新しい名前</summary>
-        public string NewName { get; private set; } = string.Empty;
+        /// <summary>ユーザーが入力したコピー先テーブル名</summary>
+        public string DestName { get; private set; } = string.Empty;
 
-        public RenameDialog(string currentName, ISet<string> existingNames)
+        public CopyDialog(string sourceName, ISet<string> existingNames)
         {
             InitializeComponent();
-            _currentName   = currentName;
             _existingNames = existingNames;
 
-            OldNameBox.Text = currentName;
-            NewNameBox.Text = currentName;
-            NewNameBox.SelectAll();
-            NewNameBox.Focus();
+            SourceNameBox.Text = sourceName;
+            DestNameBox.Text   = sourceName;
+            DestNameBox.SelectAll();
+            DestNameBox.Focus();
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
             => TryAccept();
 
-        private void NewNameBox_KeyDown(object sender, WpfKeyArgs e)
+        private void DestNameBox_KeyDown(object sender, WpfKeyArgs e)
         {
             if (e.Key == WpfKey.Enter) TryAccept();
         }
 
         private void TryAccept()
         {
-            var name = NewNameBox.Text.Trim();
+            var name  = DestNameBox.Text.Trim();
             var error = Validate(name);
             if (error != null)
             {
                 ErrorText.Text       = error;
                 ErrorText.Visibility = Visibility.Visible;
-                NewNameBox.Focus();
+                DestNameBox.Focus();
                 return;
             }
 
-            NewName      = name;
+            DestName     = name;
             DialogResult = true;
         }
 
@@ -58,12 +56,8 @@ namespace SqlServerTool.Views
             if (name.Length > 128)
                 return "名前は128文字以内にしてください。";
 
-            // SQL Server 識別子として無効な文字を簡易チェック
             if (!Regex.IsMatch(name, @"^[\p{L}_#@][\p{L}\p{N}_#@$]*$"))
                 return "使用できない文字が含まれています。\n（先頭: 文字 / _ / # / @、以降: 文字・数字 / _ / # / @ / $）";
-
-            if (string.Equals(name, _currentName, System.StringComparison.OrdinalIgnoreCase))
-                return "現在の名前と同じです。";
 
             if (_existingNames.Contains(name))
                 return $"「{name}」はすでに存在します。別の名前を入力してください。";
